@@ -29,6 +29,12 @@ BUTTON_NEXT = 27
 BUTTON_PREV = 22
 BUTTON_RESET = 23
 BUTTON_BOUNCE_SEC = 0.05
+BUTTON_HOLD_SEC = 1.0          # 다음 버튼을 이만큼 누르고 있으면 자동 읽기 켜기/끄기
+
+# ── 자동 읽기 (출력 속도) ────────────────────────────────
+# 셀당 머무는 시간(초), 느린 것 → 빠른 것. 서보 이동 시간(약 0.5초)보다 길어야 한다
+AUTO_READ_INTERVALS_SEC = [3.0, 2.0, 1.5, 1.0, 0.7]
+AUTO_READ_START_LEVEL = 1      # 처음 속도 = 위 목록의 몇 번째 (0부터), 1 → 2.0초
 
 # ── KY-040 로터리 엔코더 (추가 기능) ─────────────────────
 ENCODER_ENABLED = False

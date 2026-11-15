@@ -19,7 +19,9 @@ python -m braille_reader --mock --text "3시에 만나요!"  # 숫자 + 문장�
 python -m braille_reader --mock --no-abbrev   # 약자·약어 없이 풀어 쓰기
 ```
 
-`--mock`에서는 키보드로 조작한다: `c`=촬영, `n`=다음, `p`=이전, `r`=처음부터, `s`=다시 출력, `q`=종료 (입력 후 Enter).
+`--mock`에서는 키보드로 조작한다: `c`=촬영, `n`=다음, `p`=이전, `r`=처음부터, `s`=다시 출력, `a`=자동 읽기 켜기/끄기, `q`=종료 (입력 후 Enter).
+
+**자동 읽기**: 버튼 2를 1초 이상 누르면(키보드 `a`) 셀이 일정 간격으로 넘어간다. 자동 읽기 중에는 버튼 2/3(`n`/`p`)이 빠르게/느리게(셀당 3.0~0.7초, 5단계)로 바뀌고, 마지막 셀에서 멈춘다. 간격은 `config.py`의 `AUTO_READ_INTERVALS_SEC`에서 바꾼다.
 
 ## 부품 도착 후 라즈베리파이에서
 
@@ -41,7 +43,7 @@ bash scripts/install_pi.sh
 | 2 | + 서보 6개 + 5V 어댑터 | `.venv/bin/python -m braille_reader.servo_test` | 점 1→6 순서로 하나씩 올라옴 |
 | 3 | (보정) | `.venv/bin/python -m braille_reader.servo_test --angle 1 70` | 각 점의 올림/내림 각도를 찾아 `config.py`에 기록 |
 | 4 | | `.venv/bin/python -m braille_reader.servo_test --text 가나다` | ⠫ ⠉ ⠊ 순서로 출력 (약자 끄면 ⠈ ⠣ ⠉ ⠣ ⠊ ⠣) |
-| 5 | + 버튼 | `.venv/bin/python -m braille_reader --text 가나다` | 버튼1로 시작, 버튼2/3/4 탐색 |
+| 5 | + 버튼 | `.venv/bin/python -m braille_reader --text 가나다` | 버튼1로 시작, 버튼2/3/4 탐색, 버튼2 길게 누르면 자동 읽기 |
 | 6 | + 카메라 | `rpicam-hello -t 2000` | 미리보기가 뜸 |
 | 7 | 전체 | `.venv/bin/python -m braille_reader` | 촬영 → OCR → 점자 출력 |
 
