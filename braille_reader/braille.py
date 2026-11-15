@@ -8,7 +8,8 @@ MVP 범위 (docs/기획안.md):
   - 초성 ㅇ 생략, 된소리는 된시옷(점 6) + 자음
   - 약자 (abbreviations=True일 때): 가·나·다…하, 것, 억·언·얼·연·열·영·옥·온·옹·운·울·은·을·인
   - 약어 (abbreviations=True일 때): 그래서 그러나 그러면 그러므로 그런데 그리고 그리하여
-  - 숫자, 문장부호, 모음 연쇄 구분표는 아직 지원하지 않음
+  - 모음 연쇄 구분표 ⠤: 모음 + '예' (아예), 'ㅑ·ㅘ·ㅜ·ㅝ' + '애' (구애)
+  - 숫자, 문장부호는 아직 지원하지 않음
 """
 from __future__ import annotations
 
@@ -146,6 +147,26 @@ _JONG_SPLIT = {"ㄲ": ("ㄱ", "ㄱ"), "ㄳ": ("ㄱ", "ㅅ"), "ㄵ": ("ㄴ", "ㅈ
                "ㄾ": ("ㄹ", "ㅌ"), "ㄿ": ("ㄹ", "ㅍ"), "ㅀ": ("ㄹ", "ㅎ"), "ㅄ": ("ㅂ", "ㅅ")}
 
 
+# ── 모음 연쇄 구분표 ────────────────────────────────────
+SEPARATOR = dots(3, 6)
+_BEFORE_AE = {"ㅑ", "ㅘ", "ㅜ", "ㅝ"}  # 뒤에 '애'가 오면 ㅒ·ㅙ·ㅟ·ㅞ와 헷갈림
+
+
+def _needs_separator(text: str, i: int) -> bool:
+    """text[i-1]이 받침 없는 음절이고 text[i]가 '예' 또는 (특정 모음 뒤) '애'로 시작하면 True.
+
+    한국 점자 규정: 모음자에 '예'가 이어 나올 때, 'ㅑ, ㅘ, ㅜ, ㅝ'에 '애'가 이어 나올 때
+    두 모음자 사이에 구분표(3-6점)를 적는다.
+    """
+    if i == 0 or not is_syllable(text[i - 1]):
+        return False
+    _, prev_jung, prev_jong = decompose(text[i - 1])
+    cho, jung, _ = decompose(text[i])
+    if prev_jong or cho != "ㅇ":
+        return False
+    return jung == "ㅖ" or (jung == "ㅐ" and prev_jung in _BEFORE_AE)
+
+
 # ── 약어 ──────────────────────────────────────────────
 # 단어 첫머리에서만 쓴다. 뒤에 다른 음절이 붙어도 쓴다 (예: 그래서인지).
 _GEU = dots(1)
@@ -272,6 +293,8 @@ def text_to_braille(text: str, abbreviations: bool = True) -> ConversionResult:
             cells.extend(BrailleCell(m, f"{word}:약어") for m in WORD_ABBREVIATIONS[word])
             i += len(word)
             continue
+        if _needs_separator(text, i):
+            cells.append(BrailleCell(SEPARATOR, f"{ch}:구분표"))
         next_ch = text[i + 1] if i + 1 < len(text) else None
         cells.extend(syllable_to_cells(ch, next_ch, abbreviations))
         i += 1

@@ -165,3 +165,33 @@ def test_word_abbreviation_only_at_word_start():
 
 def test_word_abbreviation_off():
     assert u("그리고") == "⠈⠪⠐⠕⠈⠥"
+
+
+# ── 모음 연쇄 구분표 (3-6점 ⠤) ────────────────────────────
+@pytest.mark.parametrize("text, expected", [
+    ("아예", "⠣⠤⠌"),          # 모음 + 예
+    ("서예", "⠠⠎⠤⠌"),
+    ("도예", "⠊⠥⠤⠌"),
+    ("나예", "⠉⠣⠤⠌"),         # '나' 뒤 모음 → 약자 미사용 + 구분표
+    ("구애", "⠈⠍⠤⠗"),         # ㅜ + 애 (ㅟ와 구분)
+    ("야애", "⠜⠤⠗"),          # ㅑ + 애 (ㅒ와 구분)
+    ("과애", "⠈⠧⠤⠗"),         # ㅘ + 애 (ㅙ와 구분)
+    ("뭐애", "⠑⠏⠤⠗"),         # ㅝ + 애 (ㅞ와 구분)
+])
+def test_vowel_separator(text, expected):
+    assert a(text) == expected
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("한예", "⠚⠒⠌"),           # 앞 글자에 받침이 있으면 구분표 없음
+    ("아 예", "⠣⠀⠌"),          # 띄어 쓰면 구분표 없음
+    ("오애", "⠥⠗"),            # ㅗ + 애는 해당 없음
+    ("예", "⠌"),
+])
+def test_no_vowel_separator(text, expected):
+    assert a(text) == expected
+
+
+def test_vowel_separator_without_abbreviations():
+    assert u("아예") == "⠣⠤⠌"
+    assert u("나예") == "⠉⠣⠤⠌"
