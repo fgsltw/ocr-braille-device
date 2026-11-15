@@ -7,7 +7,8 @@ MVP 범위 (docs/기획안.md):
   - 한글 완성형 음절(가-힣), 공백
   - 초성 ㅇ 생략, 된소리는 된시옷(점 6) + 자음
   - 약자 (abbreviations=True일 때): 가·나·다…하, 것, 억·언·얼·연·열·영·옥·온·옹·운·울·은·을·인
-  - 약어(그래서 등), 숫자, 문장부호, 모음 연쇄 구분표는 아직 지원하지 않음
+  - 약어 (abbreviations=True일 때): 그래서 그러나 그러면 그러므로 그런데 그리고 그리하여
+  - 숫자, 문장부호, 모음 연쇄 구분표는 아직 지원하지 않음
 """
 from __future__ import annotations
 
@@ -145,6 +146,31 @@ _JONG_SPLIT = {"ㄲ": ("ㄱ", "ㄱ"), "ㄳ": ("ㄱ", "ㅅ"), "ㄵ": ("ㄴ", "ㅈ
                "ㄾ": ("ㄹ", "ㅌ"), "ㄿ": ("ㄹ", "ㅍ"), "ㅀ": ("ㄹ", "ㅎ"), "ㅄ": ("ㅂ", "ㅅ")}
 
 
+# ── 약어 ──────────────────────────────────────────────
+# 단어 첫머리에서만 쓴다. 뒤에 다른 음절이 붙어도 쓴다 (예: 그래서인지).
+_GEU = dots(1)
+WORD_ABBREVIATIONS: dict[str, tuple[int, ...]] = {
+    "그리하여": (_GEU, dots(1, 5, 6)),
+    "그러므로": (_GEU, dots(2, 6)),
+    "그래서": (_GEU, dots(2, 3, 4)),
+    "그러나": (_GEU, dots(1, 4)),
+    "그러면": (_GEU, dots(2, 5)),
+    "그런데": (_GEU, dots(1, 3, 4, 5)),
+    "그리고": (_GEU, dots(1, 3, 6)),
+}
+_WORDS_LONGEST_FIRST = sorted(WORD_ABBREVIATIONS, key=len, reverse=True)
+
+
+def _match_word_abbreviation(text: str, i: int) -> str | None:
+    """text[i]가 단어 첫머리이고 약어로 시작하면 그 약어를 돌려준다."""
+    if i > 0 and is_syllable(text[i - 1]):
+        return None  # 단어 중간 (예: 아그래서)
+    for word in _WORDS_LONGEST_FIRST:
+        if text.startswith(word, i):
+            return word
+    return None
+
+
 def _starts_with_vowel(ch: str | None) -> bool:
     return ch is not None and is_syllable(ch) and decompose(ch)[0] == "ㅇ"
 
@@ -222,21 +248,31 @@ def text_to_braille(text: str, abbreviations: bool = True) -> ConversionResult:
 
     공백·줄바꿈은 빈 셀 하나로 합치고, 앞뒤 공백은 버린다.
     지원하지 않는 문자는 건너뛰고 skipped에 기록한다.
-    abbreviations=False면 약자 없이 자모를 모두 풀어 쓴다 (예: 가 → ⠈⠣).
+    abbreviations=False면 약자·약어 없이 자모를 모두 풀어 쓴다 (예: 가 → ⠈⠣).
     """
     cells: list[BrailleCell] = []
     skipped: list[str] = []
     pending_space = False
-    for i, ch in enumerate(text):
+    i = 0
+    while i < len(text):
+        ch = text[i]
         if ch.isspace():
             pending_space = bool(cells)
+            i += 1
             continue
         if not is_syllable(ch):
             skipped.append(ch)
+            i += 1
             continue
         if pending_space:
             cells.append(BrailleCell(BLANK, " "))
             pending_space = False
+        word = _match_word_abbreviation(text, i) if abbreviations else None
+        if word:
+            cells.extend(BrailleCell(m, f"{word}:약어") for m in WORD_ABBREVIATIONS[word])
+            i += len(word)
+            continue
         next_ch = text[i + 1] if i + 1 < len(text) else None
         cells.extend(syllable_to_cells(ch, next_ch, abbreviations))
+        i += 1
     return ConversionResult(cells, skipped)

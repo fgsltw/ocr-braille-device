@@ -135,3 +135,33 @@ def test_abbreviation_exception_before_vowel(text, expected):
 
 def test_abbreviation_off_matches_spec_example():
     assert u("가나다") == "⠈⠣⠉⠣⠊⠣"
+
+
+# ── 약어 ──────────────────────────────────────────────
+@pytest.mark.parametrize("text, expected", [
+    ("그래서", "⠁⠎"),
+    ("그러나", "⠁⠉"),
+    ("그러면", "⠁⠒"),
+    ("그러므로", "⠁⠢"),
+    ("그런데", "⠁⠝"),
+    ("그리고", "⠁⠥"),
+    ("그리하여", "⠁⠱"),
+])
+def test_word_abbreviations(text, expected):
+    assert a(text) == expected
+
+
+def test_word_abbreviation_with_suffix():
+    # 뒤에 다른 음절이 붙어도 약어 사용: 그래서 + 인(약자) + 지
+    assert a("그래서인지") == "⠁⠎⠟⠨⠕"
+
+
+def test_word_abbreviation_only_at_word_start():
+    # 단어 중간이면 약어를 쓰지 않음: 아 + 그(ㄱ ㅡ) + 래(ㄹ ㅐ) + 서(ㅅ ㅓ)
+    assert a("아그래서") == "⠣⠈⠪⠐⠗⠠⠎"
+    assert a("가 그리고 나") == "⠫⠀⠁⠥⠀⠉"
+    assert a("\"그러나") == "⠁⠉"   # 앞의 문장부호는 단어 경계
+
+
+def test_word_abbreviation_off():
+    assert u("그리고") == "⠈⠪⠐⠕⠈⠥"
