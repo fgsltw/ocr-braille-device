@@ -1,0 +1,4 @@
+# For Raspberry Pi. picamera2, gpiozero, lgpio come from apt (scripts/install_pi.sh)
+Pillow>=9.0
+pytesseract>=0.3.10
+adafruit-circuitpython-servokit>=1.3

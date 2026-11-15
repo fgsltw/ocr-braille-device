@@ -1,0 +1,18 @@
+# 전원을 켜면 자동 실행 (선택)
+#   1) 아래 User와 경로(/home/pi/ocr-braille-device)를 실제 값으로 바꾼다
+#   2) sudo cp scripts/braille-reader.service /etc/systemd/system/
+#   3) sudo systemctl enable --now braille-reader
+#   로그 보기: journalctl -u braille-reader -f
+[Unit]
+Description=OCR Hangul Braille Reader
+After=multi-user.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/ocr-braille-device
+ExecStart=/home/pi/ocr-braille-device/.venv/bin/python -u -m braille_reader
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
