@@ -13,7 +13,8 @@
 pip install -r requirements-dev.txt
 python -m pytest                       # 점자 변환 테스트
 python -m braille_reader --mock        # "가나다"를 터미널 점자 셀로 출력
-python -m braille_reader --mock --text "안녕 하세요"
+python -m braille_reader --mock --text "안녕하세요"
+python -m braille_reader --mock --no-abbrev   # 약자 없이 풀어 쓰기
 ```
 
 `--mock`에서는 키보드로 조작한다: `c`=촬영, `n`=다음, `p`=이전, `r`=처음부터, `s`=다시 출력, `q`=종료 (입력 후 Enter).
@@ -25,7 +26,7 @@ python -m braille_reader --mock --text "안녕 하세요"
 Raspberry Pi OS Bookworm 64-bit 기준.
 
 ```bash
-git clone https://github.com/<계정>/ocr-braille-device.git
+git clone https://github.com/fgsltw/ocr-braille-device.git
 cd ocr-braille-device
 bash scripts/install_pi.sh
 ```
@@ -37,7 +38,7 @@ bash scripts/install_pi.sh
 | 1 | PCA9685 | `i2cdetect -y 1` | 표에 `40` |
 | 2 | + 서보 6개 + 5V 어댑터 | `.venv/bin/python -m braille_reader.servo_test` | 점 1→6 순서로 하나씩 올라옴 |
 | 3 | (보정) | `.venv/bin/python -m braille_reader.servo_test --angle 1 70` | 각 점의 올림/내림 각도를 찾아 `config.py`에 기록 |
-| 4 | | `.venv/bin/python -m braille_reader.servo_test --text 가나다` | ⠈ ⠣ ⠉ ⠣ ⠊ ⠣ 순서로 출력 |
+| 4 | | `.venv/bin/python -m braille_reader.servo_test --text 가나다` | ⠫ ⠉ ⠊ 순서로 출력 (약자 끄면 ⠈ ⠣ ⠉ ⠣ ⠊ ⠣) |
 | 5 | + 버튼 | `.venv/bin/python -m braille_reader --text 가나다` | 버튼1로 시작, 버튼2/3/4 탐색 |
 | 6 | + 카메라 | `rpicam-hello -t 2000` | 미리보기가 뜸 |
 | 7 | 전체 | `.venv/bin/python -m braille_reader` | 촬영 → OCR → 점자 출력 |
@@ -60,7 +61,7 @@ OCR 결과가 이상하면 마지막 촬영 사진 `captures/last.jpg`를 확인
 braille_reader/
   config.py      핀 번호, 서보 각도, OCR 설정 (하드웨어 값은 여기만)
   hangul.py      음절 → 초성·중성·종성
-  braille.py     한글 → 6점 셀 배열 (한국 점자 기본 규칙)
+  braille.py     한글 → 6점 셀 배열 (한국 점자 기본 규칙 + 약자)
   navigator.py   셀 앞뒤 이동
   ocr.py         이미지 전처리 + Tesseract
   sources.py     카메라+OCR / 이미지 파일 / 고정 문장
@@ -73,4 +74,4 @@ tests/           점자 변환·탐색 테스트
 
 ## MVP에서 지원하지 않는 것
 
-약자·약어, 숫자, 문장부호, 모음 연쇄 구분표(예: `아예`), 여러 셀 동시 출력. 지원하지 않는 문자는 건너뛰고 터미널에 표시한다.
+약어(그래서·그러나 등), 숫자, 문장부호, 모음 연쇄 구분표(예: `아예`), 여러 셀 동시 출력. 지원하지 않는 문자는 건너뛰고 터미널에 표시한다.

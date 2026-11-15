@@ -51,7 +51,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.text:
             from .braille import text_to_braille
 
-            for cell in text_to_braille(args.text).cells:
+            for cell in text_to_braille(args.text, config.BRAILLE_ABBREVIATIONS).cells:
                 print(f"{cell.unicode} 점 {cell.raised} ← {cell.source}")
                 display.show(cell.mask)
                 time.sleep(1.0)

@@ -36,6 +36,10 @@ ENCODER_CLK = 5
 ENCODER_DT = 6
 ENCODER_SW = 13
 
+# ── 점자 ───────────────────────────────────────────────
+# True: 약자 사용 (가→⠫, 한글→⠚⠒⠈⠮). False: 자모를 모두 풀어 씀 (가→⠈⠣)
+BRAILLE_ABBREVIATIONS = True
+
 # ── 카메라 / OCR ───────────────────────────────────────
 CAMERA_RESOLUTION = (2304, 1296)
 CAMERA_WARMUP_SEC = 1.5

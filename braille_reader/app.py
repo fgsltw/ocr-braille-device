@@ -9,8 +9,10 @@ from .navigator import Navigator
 
 
 class App:
-    def __init__(self, display: BaseDisplay, source, events: queue.Queue) -> None:
+    def __init__(self, display: BaseDisplay, source, events: queue.Queue,
+                 abbreviations: bool = True) -> None:
         self.display = display
+        self.abbreviations = abbreviations
         self.source = source
         self.events = events
         self.nav = Navigator()
@@ -59,7 +61,7 @@ class App:
         finally:
             self._drain_events()  # 처리 중에 눌린 버튼은 무시
 
-        result = text_to_braille(text)
+        result = text_to_braille(text, self.abbreviations)
         print(f"[인식] {text!r}")
         if result.skipped:
             print(f"[건너뜀] 지원하지 않는 문자: {''.join(result.skipped)!r}")
