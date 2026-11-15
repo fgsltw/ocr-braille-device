@@ -8,7 +8,7 @@ from PIL import Image, ImageFilter, ImageOps
 from . import config
 
 # 한글, 숫자, 점자로 바꿀 수 있는 문장부호, 공백만 남긴다
-_UNSUPPORTED = re.compile(r"[^가-힣0-9\s.?!,·ㆍ:/\-~()“”‘’…\"']")
+_UNSUPPORTED = re.compile(r"[^가-힣0-9\s.?!,·ㆍ:/\-~∼―—()“”‘’…\"']")
 _SPACES = re.compile(r"\s+")
 
 

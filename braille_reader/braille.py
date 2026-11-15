@@ -190,15 +190,19 @@ PUNCTUATION: dict[str, tuple[int, ...]] = {
     ":": (dots(5), dots(2)),             # 쌍점
     "/": (dots(4, 5, 6), dots(3, 4)),    # 빗금
     "-": (dots(3, 6),),                  # 붙임표
-    "~": (dots(3, 6), dots(3, 6)),       # 물결표
+    "―": (dots(3, 6), dots(3, 6)),       # 줄표
+    "—": (dots(3, 6), dots(3, 6)),
+    "~": (dots(4), dots(3, 5)),          # 물결표
+    "∼": (dots(4), dots(3, 5)),
     "(": (dots(2, 3, 6), dots(3)),       # 여는 소괄호
     ")": (dots(6), dots(3, 5, 6)),       # 닫는 소괄호
     "“": (dots(2, 3, 6),),               # 여는 큰따옴표
     "”": (dots(3, 5, 6),),               # 닫는 큰따옴표
     "‘": (dots(6), dots(2, 3, 6)),       # 여는 작은따옴표
     "’": (dots(3, 5, 6), dots(3)),       # 닫는 작은따옴표
-    "…": (dots(6), dots(6), dots(6)),    # 줄임표
+    "…": (dots(6), dots(6), dots(6)),    # 가운뎃점 줄임표 (…, ……)
 }
+_PERIOD_ELLIPSIS = (dots(2, 5, 6),) * 3  # 마침표 줄임표 (..., ......), 제53항
 # 방향이 없는 따옴표는 여는/닫는 것을 번갈아 쓴다
 _TOGGLE_QUOTES = {'"': ("“", "”"), "'": ("‘", "’")}
 
@@ -232,6 +236,10 @@ def _starts_with_vowel(ch: str | None) -> bool:
     return ch is not None and is_syllable(ch) and decompose(ch)[0] == "ㅇ"
 
 
+def _is_ye(ch: str | None) -> bool:
+    return ch is not None and is_syllable(ch) and decompose(ch)[:2] == ("ㅇ", "ㅖ")
+
+
 def _abbreviated_masks(ch: str, next_ch: str | None) -> list[int] | None:
     """약자로 적을 수 있으면 셀 목록, 아니면 None."""
     cho, jung, jong = decompose(ch)
@@ -245,8 +253,13 @@ def _abbreviated_masks(ch: str, next_ch: str | None) -> list[int] | None:
 
     # 가 사 / 나 다 마 바 자 카 타 파 하 (+ 된소리, + 받침)
     if jung == "ㅏ" and (base in _A_OWN_CELL or base in _A_OMITTED):
-        # '나…하' 뒤에 모음으로 시작하는 글자가 오면 약자를 쓰지 않는다 (예: 나이)
-        if base in _A_OMITTED and not jong and _starts_with_vowel(next_ch):
+        # 제14항: '나…하' 뒤에 모음이 오면 약자를 쓰지 않는다 (나이 = ⠉⠣⠕).
+        # 단 '예'가 오면 구분표가 들어가므로 약자를 쓴다 (다예 = ⠊⠤⠌, 한글 점자 규정 해설)
+        if (base in _A_OMITTED and not jong
+                and _starts_with_vowel(next_ch) and not _is_ye(next_ch)):
+            return None
+        # 제14항 [붙임]: '팠'은 'ㅏ'를 생략하지 않는다
+        if base == "ㅍ" and jong == "ㅆ":
             return None
         head = _A_OWN_CELL.get(base) or CHOSEONG[base][0]
         return prefix + [head] + list(JONGSEONG[jong])
@@ -254,9 +267,12 @@ def _abbreviated_masks(ch: str, next_ch: str | None) -> list[int] | None:
     # 모음+받침 약자 (예: 선 = ㅅ + 언, 한글의 글 = ㄱ + 을)
     if jong:
         first, rest = _JONG_SPLIT.get(jong, (jong, ""))
-        rime = _RIME.get((jung, first))
+        if base in _SEONG_INITIALS and jung == "ㅕ" and first == "ㅇ":
+            rime = None  # 'ㅅ·ㅈ·ㅊ + 영' 약자는 '성·정·청'을 뜻하므로 '셩'은 풀어 쓴다 (얄라셩)
+        else:
+            rime = _RIME.get((jung, first))
         if rime is None and base in _SEONG_INITIALS and jung == "ㅓ" and first == "ㅇ":
-            rime = _RIME[("ㅕ", "ㅇ")]
+            rime = _RIME[("ㅕ", "ㅇ")]  # 제17항
         if rime is not None:
             return list(CHOSEONG[cho]) + [rime] + list(JONGSEONG[rest])
     return None
@@ -341,11 +357,14 @@ def text_to_braille(text: str, abbreviations: bool = True) -> ConversionResult:
             i += 1
             continue
 
-        # 문장부호
-        if text.startswith("...", i):
-            emit(PUNCTUATION["…"], "...:줄임표")
+        # 문장부호 — 줄임표는 점 개수와 관계없이 3칸 (제53항)
+        if ch == "…" or text.startswith("...", i):
+            end = i
+            while end < n and text[end] == ch:
+                end += 1
+            emit(PUNCTUATION["…"] if ch == "…" else _PERIOD_ELLIPSIS, f"{text[i:end]}:줄임표")
             in_number = False
-            i += 3
+            i = end
             continue
         if ch in _TOGGLE_QUOTES:
             opening, closing = _TOGGLE_QUOTES[ch]
@@ -379,8 +398,8 @@ def text_to_braille(text: str, abbreviations: bool = True) -> ConversionResult:
             next_ch = text[i + 1] if i + 1 < n else None
             new += syllable_to_cells(ch, next_ch, abbreviations)
             step = 1
-        # 숫자 뒤에 숫자처럼 보이는 칸(ㄴㄷㅁㅋㅌㅍㅎ, 운 등)이 오면 한 칸 띄운다
-        if in_number and new[0].mask in _DIGIT_CELLS:
+        # 제44항 [다만]: 숫자 뒤 첫소리 ㄴㄷㅁㅋㅌㅍㅎ와 '운' 약자는 숫자와 띄어 쓴다
+        if in_number and not word and new[0].mask in _DIGIT_CELLS:
             pending_space = True
         if pending_space:
             cells.append(BrailleCell(BLANK, " "))
