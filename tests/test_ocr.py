@@ -3,9 +3,10 @@ from PIL import Image, ImageDraw
 from braille_reader.ocr import clean_text, preprocess
 
 
-def test_clean_text_keeps_only_hangul_and_spaces():
-    assert clean_text(" 가 나1!\n\n다 ") == "가 나 다"
-    assert clean_text("abc 123") == ""
+def test_clean_text_keeps_hangul_digits_punctuation():
+    assert clean_text(" 가 나1!\n\n다 ") == "가 나1! 다"
+    assert clean_text("abc 123 @#") == "123"
+    assert clean_text("“가”(3.5)") == "“가”(3.5)"
 
 
 def test_preprocess_binarizes_and_upscales():

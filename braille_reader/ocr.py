@@ -7,7 +7,8 @@ from PIL import Image, ImageFilter, ImageOps
 
 from . import config
 
-_NOT_HANGUL_OR_SPACE = re.compile(r"[^가-힣\s]")
+# 한글, 숫자, 점자로 바꿀 수 있는 문장부호, 공백만 남긴다
+_UNSUPPORTED = re.compile(r"[^가-힣0-9\s.?!,·ㆍ:/\-~()“”‘’…\"']")
 _SPACES = re.compile(r"\s+")
 
 
@@ -48,8 +49,8 @@ def _otsu(gray: Image.Image) -> int:
 
 
 def clean_text(raw: str) -> str:
-    """MVP는 한글과 공백만 사용한다. 그 외 문자는 버리고 공백을 하나로 합친다."""
-    text = _NOT_HANGUL_OR_SPACE.sub("", raw)
+    """점자로 바꿀 수 없는 문자(영어 등)는 버리고 공백을 하나로 합친다."""
+    text = _UNSUPPORTED.sub("", raw)
     return _SPACES.sub(" ", text).strip()
 
 

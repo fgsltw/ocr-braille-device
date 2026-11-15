@@ -63,9 +63,9 @@ def test_space_becomes_one_blank_cell():
 
 
 def test_unsupported_chars_are_skipped():
-    result = text_to_braille("가1나!", abbreviations=False)
+    result = text_to_braille("가A나@", abbreviations=False)
     assert result.unicode == "⠈⠣⠉⠣"
-    assert result.skipped == ["1", "!"]
+    assert result.skipped == ["A", "@"]
 
 
 def test_cell_metadata():
@@ -160,7 +160,7 @@ def test_word_abbreviation_only_at_word_start():
     # 단어 중간이면 약어를 쓰지 않음: 아 + 그(ㄱ ㅡ) + 래(ㄹ ㅐ) + 서(ㅅ ㅓ)
     assert a("아그래서") == "⠣⠈⠪⠐⠗⠠⠎"
     assert a("가 그리고 나") == "⠫⠀⠁⠥⠀⠉"
-    assert a("\"그러나") == "⠁⠉"   # 앞의 문장부호는 단어 경계
+    assert a("\"그러나\"") == "⠦⠁⠉⠴"   # 앞의 문장부호는 단어 경계
 
 
 def test_word_abbreviation_off():
@@ -195,3 +195,59 @@ def test_no_vowel_separator(text, expected):
 def test_vowel_separator_without_abbreviations():
     assert u("아예") == "⠣⠤⠌"
     assert u("나예") == "⠉⠣⠤⠌"
+
+
+# ── 숫자 ──────────────────────────────────────────────
+@pytest.mark.parametrize("text, expected", [
+    ("1", "⠼⠁"),
+    ("1234567890", "⠼⠁⠃⠉⠙⠑⠋⠛⠓⠊⠚"),   # 이어지는 숫자는 수표 하나
+    ("1,000", "⠼⠁⠂⠚⠚⠚"),             # 숫자 속 쉼표
+    ("3.14", "⠼⠉⠲⠁⠙"),               # 소수점
+    ("1 2", "⠼⠁⠀⠼⠃"),                 # 띄우면 수표 다시
+    ("010-1234", "⠼⠚⠁⠚⠤⠼⠁⠃⠉⠙"),     # 붙임표 뒤 수표 다시
+])
+def test_numbers(text, expected):
+    assert a(text) == expected
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("5명", "⠼⠑⠀⠑⠻"),        # ㅁ은 숫자 5와 같아서 띄움
+    ("3년", "⠼⠉⠀⠉⠡"),        # ㄴ
+    ("2다", "⠼⠃⠀⠊"),          # ㄷ (다 약자)
+    ("7호", "⠼⠛⠀⠚⠥"),        # ㅎ
+    ("1운", "⠼⠁⠀⠛"),          # 운 약자
+    ("1개", "⠼⠁⠈⠗"),          # ㄱ은 숫자와 헷갈리지 않아 붙임
+    ("2시", "⠼⠃⠠⠕"),
+    ("1월", "⠼⠁⠏⠂"),
+    ("제3장", "⠨⠝⠼⠉⠨⠶"),     # 한글 뒤 숫자는 수표로 구분
+])
+def test_hangul_after_number(text, expected):
+    assert a(text) == expected
+
+
+# ── 문장부호 ───────────────────────────────────────────
+@pytest.mark.parametrize("text, expected", [
+    ("가.", "⠫⠲"),
+    ("가?", "⠫⠦"),
+    ("가!", "⠫⠖"),
+    ("가, 나", "⠫⠐⠀⠉"),
+    ("가·나", "⠫⠐⠆⠉"),
+    ("가:나", "⠫⠐⠂⠉"),
+    ("가/나", "⠫⠸⠌⠉"),
+    ("가-나", "⠫⠤⠉"),
+    ("가~나", "⠫⠤⠤⠉"),
+    ("(가)", "⠦⠄⠫⠠⠴"),
+    ("“가”", "⠦⠫⠴"),
+    ("‘가’", "⠠⠦⠫⠴⠄"),
+    ('"가" "나"', "⠦⠫⠴⠀⠦⠉⠴"),    # 방향 없는 큰따옴표는 여닫기 번갈아
+    ("'가'", "⠠⠦⠫⠴⠄"),
+    ("가…", "⠫⠠⠠⠠"),
+    ("가...", "⠫⠠⠠⠠"),
+    ("1.", "⠼⠁⠲"),               # 숫자 뒤 마침표 (소수점 아님)
+])
+def test_punctuation(text, expected):
+    assert a(text) == expected
+
+
+def test_sentence_with_everything():
+    assert a("안녕하세요. 3시에 만나요!") == "⠣⠒⠉⠻⠚⠠⠝⠬⠲⠀⠼⠉⠠⠕⠝⠀⠑⠒⠉⠣⠬⠖"

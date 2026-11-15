@@ -15,6 +15,7 @@ python -m pytest                       # 점자 변환 테스트
 python -m braille_reader --mock        # "가나다"를 터미널 점자 셀로 출력
 python -m braille_reader --mock --text "안녕하세요"
 python -m braille_reader --mock --text "그리고 안녕"   # 약어 + 약자
+python -m braille_reader --mock --text "3시에 만나요!"  # 숫자 + 문장부호
 python -m braille_reader --mock --no-abbrev   # 약자·약어 없이 풀어 쓰기
 ```
 
@@ -62,7 +63,7 @@ OCR 결과가 이상하면 마지막 촬영 사진 `captures/last.jpg`를 확인
 braille_reader/
   config.py      핀 번호, 서보 각도, OCR 설정 (하드웨어 값은 여기만)
   hangul.py      음절 → 초성·중성·종성
-  braille.py     한글 → 6점 셀 배열 (기본 규칙 + 약자·약어 + 모음 연쇄 구분표)
+  braille.py     한글 → 6점 셀 배열 (기본 규칙, 약자·약어, 모음 연쇄 구분표, 숫자, 문장부호)
   navigator.py   셀 앞뒤 이동
   ocr.py         이미지 전처리 + Tesseract
   sources.py     카메라+OCR / 이미지 파일 / 고정 문장
@@ -75,4 +76,4 @@ tests/           점자 변환·탐색 테스트
 
 ## MVP에서 지원하지 않는 것
 
-숫자, 문장부호, 여러 셀 동시 출력. 지원하지 않는 문자는 건너뛰고 터미널에 표시한다.
+영어, %·@ 같은 기호, 여러 셀 동시 출력. 지원하지 않는 문자는 건너뛰고 터미널에 표시한다.

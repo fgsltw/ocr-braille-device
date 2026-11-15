@@ -9,7 +9,9 @@ MVP 범위 (docs/기획안.md):
   - 약자 (abbreviations=True일 때): 가·나·다…하, 것, 억·언·얼·연·열·영·옥·온·옹·운·울·은·을·인
   - 약어 (abbreviations=True일 때): 그래서 그러나 그러면 그러므로 그런데 그리고 그리하여
   - 모음 연쇄 구분표 ⠤: 모음 + '예' (아예), 'ㅑ·ㅘ·ㅜ·ㅝ' + '애' (구애)
-  - 숫자, 문장부호는 아직 지원하지 않음
+  - 숫자: 수표 ⠼ + 숫자, 숫자 속 쉼표·소수점, 숫자 뒤 ㄴㄷㅁㅋㅌㅍㅎ·운은 한 칸 띄움
+  - 문장부호: . ? ! , · : / - ~ ( ) 따옴표 줄임표
+  - 영어 등 그 밖의 문자는 지원하지 않음
 """
 from __future__ import annotations
 
@@ -167,6 +169,40 @@ def _needs_separator(text: str, i: int) -> bool:
     return jung == "ㅖ" or (jung == "ㅐ" and prev_jung in _BEFORE_AE)
 
 
+# ── 숫자 ──────────────────────────────────────────────
+NUMBER_SIGN = dots(3, 4, 5, 6)  # 수표
+DIGITS: dict[str, int] = {
+    "1": dots(1), "2": dots(1, 2), "3": dots(1, 4), "4": dots(1, 4, 5), "5": dots(1, 5),
+    "6": dots(1, 2, 4), "7": dots(1, 2, 4, 5), "8": dots(1, 2, 5), "9": dots(2, 4), "0": dots(2, 4, 5),
+}
+_DIGIT_CELLS = set(DIGITS.values())
+NUMBER_COMMA = dots(2)          # 1,000
+DECIMAL_POINT = dots(2, 5, 6)   # 3.14
+
+# ── 문장부호 ───────────────────────────────────────────
+PUNCTUATION: dict[str, tuple[int, ...]] = {
+    ".": (dots(2, 5, 6),),               # 마침표
+    "?": (dots(2, 3, 6),),               # 물음표
+    "!": (dots(2, 3, 5),),               # 느낌표
+    ",": (dots(5),),                     # 쉼표
+    "·": (dots(5), dots(2, 3)),          # 가운뎃점
+    "ㆍ": (dots(5), dots(2, 3)),
+    ":": (dots(5), dots(2)),             # 쌍점
+    "/": (dots(4, 5, 6), dots(3, 4)),    # 빗금
+    "-": (dots(3, 6),),                  # 붙임표
+    "~": (dots(3, 6), dots(3, 6)),       # 물결표
+    "(": (dots(2, 3, 6), dots(3)),       # 여는 소괄호
+    ")": (dots(6), dots(3, 5, 6)),       # 닫는 소괄호
+    "“": (dots(2, 3, 6),),               # 여는 큰따옴표
+    "”": (dots(3, 5, 6),),               # 닫는 큰따옴표
+    "‘": (dots(6), dots(2, 3, 6)),       # 여는 작은따옴표
+    "’": (dots(3, 5, 6), dots(3)),       # 닫는 작은따옴표
+    "…": (dots(6), dots(6), dots(6)),    # 줄임표
+}
+# 방향이 없는 따옴표는 여는/닫는 것을 번갈아 쓴다
+_TOGGLE_QUOTES = {'"': ("“", "”"), "'": ("‘", "’")}
+
+
 # ── 약어 ──────────────────────────────────────────────
 # 단어 첫머리에서만 쓴다. 뒤에 다른 음절이 붙어도 쓴다 (예: 그래서인지).
 _GEU = dots(1)
@@ -274,28 +310,82 @@ def text_to_braille(text: str, abbreviations: bool = True) -> ConversionResult:
     cells: list[BrailleCell] = []
     skipped: list[str] = []
     pending_space = False
+    in_number = False       # 바로 앞이 숫자인가 (수표를 다시 쓸지, 띄울지 결정)
+    quote_open = {'"': False, "'": False}
+    n = len(text)
     i = 0
-    while i < len(text):
-        ch = text[i]
-        if ch.isspace():
-            pending_space = bool(cells)
-            i += 1
-            continue
-        if not is_syllable(ch):
-            skipped.append(ch)
-            i += 1
-            continue
+
+    def emit(masks, source: str) -> None:
+        nonlocal pending_space
         if pending_space:
             cells.append(BrailleCell(BLANK, " "))
             pending_space = False
+        cells.extend(BrailleCell(m, source) for m in masks)
+
+    while i < n:
+        ch = text[i]
+        if ch.isspace():
+            pending_space = bool(cells)
+            in_number = False
+            i += 1
+            continue
+
+        # 숫자: 이어지는 숫자는 수표 하나만
+        if ch in DIGITS:
+            emit(([] if in_number else [NUMBER_SIGN]) + [DIGITS[ch]], f"{ch}:숫자")
+            in_number = True
+            i += 1
+            continue
+        if in_number and ch in ",." and i + 1 < n and text[i + 1] in DIGITS:
+            emit([NUMBER_COMMA if ch == "," else DECIMAL_POINT], f"{ch}:숫자")
+            i += 1
+            continue
+
+        # 문장부호
+        if text.startswith("...", i):
+            emit(PUNCTUATION["…"], "...:줄임표")
+            in_number = False
+            i += 3
+            continue
+        if ch in _TOGGLE_QUOTES:
+            opening, closing = _TOGGLE_QUOTES[ch]
+            mark = closing if quote_open[ch] else opening
+            quote_open[ch] = not quote_open[ch]
+            emit(PUNCTUATION[mark], f"{ch}:문장부호")
+            in_number = False
+            i += 1
+            continue
+        if ch in PUNCTUATION:
+            emit(PUNCTUATION[ch], f"{ch}:문장부호")
+            in_number = False
+            i += 1
+            continue
+
+        if not is_syllable(ch):
+            skipped.append(ch)
+            in_number = False
+            i += 1
+            continue
+
+        # 한글
         word = _match_word_abbreviation(text, i) if abbreviations else None
         if word:
-            cells.extend(BrailleCell(m, f"{word}:약어") for m in WORD_ABBREVIATIONS[word])
-            i += len(word)
-            continue
-        if _needs_separator(text, i):
-            cells.append(BrailleCell(SEPARATOR, f"{ch}:구분표"))
-        next_ch = text[i + 1] if i + 1 < len(text) else None
-        cells.extend(syllable_to_cells(ch, next_ch, abbreviations))
-        i += 1
+            new = [BrailleCell(m, f"{word}:약어") for m in WORD_ABBREVIATIONS[word]]
+            step = len(word)
+        else:
+            new = []
+            if _needs_separator(text, i):
+                new.append(BrailleCell(SEPARATOR, f"{ch}:구분표"))
+            next_ch = text[i + 1] if i + 1 < n else None
+            new += syllable_to_cells(ch, next_ch, abbreviations)
+            step = 1
+        # 숫자 뒤에 숫자처럼 보이는 칸(ㄴㄷㅁㅋㅌㅍㅎ, 운 등)이 오면 한 칸 띄운다
+        if in_number and new[0].mask in _DIGIT_CELLS:
+            pending_space = True
+        if pending_space:
+            cells.append(BrailleCell(BLANK, " "))
+            pending_space = False
+        cells.extend(new)
+        in_number = False
+        i += step
     return ConversionResult(cells, skipped)
