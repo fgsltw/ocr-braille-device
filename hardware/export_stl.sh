@@ -15,6 +15,11 @@ for part in base lid pin lever_a lever_b servo_mount fit_test; do
   echo "braille_cell: $part"
   "$OPENSCAD" -o "stl/cell_${part}.stl" -D "part=\"$part\"" braille_cell.scad
 done
+# 업체 주문용: 조금 가는 핀 (뚜껑 구멍은 그대로라 여유가 0.1/0.2mm 커진다)
+for d in 2.9 2.8; do
+  echo "braille_cell: pin d=$d"
+  "$OPENSCAD" -o "stl/cell_pin_d${d}.stl" -D 'part="pin"' -D "pin_d=$d" braille_cell.scad
+done
 for part in stand_base column arm; do
   echo "camera_stand: $part"
   "$OPENSCAD" -o "stl/stand_${part#stand_}.stl" -D "part=\"$part\"" camera_stand.scad
