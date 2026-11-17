@@ -5,6 +5,7 @@
 - 기획: [docs/기획안.md](docs/기획안.md)
 - 조작 흐름: [docs/와이어프레임.md](docs/와이어프레임.md)
 - 배선: [docs/배선도.md](docs/배선도.md)
+- 서보 고정·카메라 거치: [docs/기구.md](docs/기구.md)
 - 진행 상황: [progress.md](progress.md)
 
 ## 부품 없이 PC에서 먼저 해보기
@@ -53,7 +54,7 @@ bash scripts/install_pi.sh
 - 버튼 없이: `--keyboard`
 - 카메라 없이: `--text "문장"` 또는 `--image 사진.jpg`
 
-OCR 결과가 이상하면 마지막 촬영 사진 `captures/last.jpg`를 확인하고, `config.py`의 `OCR_PSM`(6 또는 7), `OCR_BINARIZE_THRESHOLD`, `CAMERA_RESOLUTION`을 조정한다.
+OCR 결과가 이상하면 마지막 촬영 사진 `captures/last.jpg`와 OCR에 실제로 들어간 흑백 이미지 `captures/last_processed.png`를 확인한다. 문서 바깥이 많이 찍히면 `OCR_CROP`, 글자가 끊기거나 얼룩이 글자로 잡히면 `OCR_ADAPTIVE_RADIUS`·`OCR_ADAPTIVE_OFFSET`(또는 `OCR_THRESHOLD_METHOD = "otsu"`), 그 밖에 `OCR_PSM`(6 또는 7)·`CAMERA_RESOLUTION`을 조정한다.
 
 ### 3. 전원 켜면 자동 실행 (선택)
 
@@ -67,7 +68,7 @@ braille_reader/
   hangul.py      음절 → 초성·중성·종성
   braille.py     한글 → 6점 셀 배열 (기본 규칙, 약자·약어, 모음 연쇄 구분표, 숫자, 문장부호)
   navigator.py   셀 앞뒤 이동
-  ocr.py         이미지 전처리 + Tesseract
+  ocr.py         이미지 전처리(영역 자르기, 적응형 이진화) + Tesseract
   sources.py     카메라+OCR / 이미지 파일 / 고정 문장
   display.py     PCA9685 서보 출력 / 터미널 모의 출력
   controls.py    버튼·엔코더 / 키보드 → 이벤트

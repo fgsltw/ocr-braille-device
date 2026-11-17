@@ -17,7 +17,7 @@ README의 "단계별 점검" 표 순서대로 한 부품씩 연결하며 진행�
 | 5 | 돌기 높이·간격을 손끝으로 구분할 수 있는지 확인, 필요하면 기구물 수정 | `servo_test --text 가나다` | 촉각 출력 |
 | 6 | 버튼 모듈 배선 확인 (눌렀을 때 GND 연결되는지, 풀업 내장 여부) | `python -m braille_reader --text 가나다` | 사용자 조작 |
 | 7 | 카메라 연결 확인 | `rpicam-hello -t 2000` | OCR |
-| 8 | OCR 인식률 확인, 필요하면 `OCR_PSM`·`OCR_BINARIZE_THRESHOLD`·`CAMERA_RESOLUTION` 조정 | `captures/last.jpg`와 터미널 `[OCR] 원문` 비교 | OCR |
+| 8 | 카메라 높이·`OCR_CROP` 정하고 OCR 인식률 확인. 적응형/Otsu 이진화 비교, 필요하면 `OCR_ADAPTIVE_*`·`OCR_PSM` 조정 | `captures/last.jpg`, `last_processed.png`, 터미널 `[OCR] 원문` | OCR |
 | 9 | "가나다" 시연 시나리오 통과 (약자 켬: ⠫ ⠉ ⠊ 3셀 / 끔: 6셀) | `python -m braille_reader` | 통합 동작 |
 
 ### 2. 부품 도착 후 — 선택
@@ -43,6 +43,14 @@ README의 "단계별 점검" 표 순서대로 한 부품씩 연결하며 진행�
 ---
 
 ## 작업 기록
+
+### 2026-11-17 — Cornell 프로젝트에서 가져온 것
+참고: Cornell ECE5725 (2019 Fall) "Braille Translator" (SG90 6개 + Pi Camera + Tesseract, 영어)
+- OCR 전처리: 촬영 영역 자르기(`OCR_CROP`, 비율 지정), 적응형 이진화(`OCR_THRESHOLD_METHOD = "adaptive"`, 기본값). OpenCV 없이 Pillow로 구현
+- OCR에 들어간 흑백 이미지를 `captures/last_processed.png`로 저장
+- `docs/기구.md`: 1단계 철사 연결(Cornell 방식) → 2단계 가이드 판 + 멈춤 턱, 서보 각도 보정 순서, 카메라 거치(약 30cm)
+- 가져오지 않은 것: GPIO 직접 PWM(우리는 PCA9685), 0.2초 뒤 돌기 내림(우리는 유지), 화면 피드백(우리는 촉각 신호)
+- 테스트 170개 통과 (그늘진 사진에서 적응형 이진화가 배경을 흰색으로 유지하는지 확인). 실제 카메라 사진으로는 아직 확인 안 됨
 
 ### 2026-11-15 — 출력 속도 조절 (자동 읽기)
 - 버튼 2 길게 누르기(1초) → 자동 읽기 켜기/끄기. 짧게 누르기는 손을 뗄 때 '다음 셀'

@@ -54,4 +54,12 @@ CAPTURE_PATH = "captures/last.jpg"   # 마지막 촬영 이미지 (OCR 문제 �
 
 OCR_LANG = "kor"
 OCR_PSM = 6                    # 6 = 하나의 텍스트 블록으로 가정. 한 줄이면 7도 시도해 볼 것
-OCR_BINARIZE_THRESHOLD = None  # None = 자동(Otsu), 숫자(0~255) = 고정 임계값
+# 촬영 사진에서 문서 부분만 잘라 OCR한다. (왼쪽, 위, 오른쪽, 아래)를 0~1 비율로.
+# 예: (0.1, 0.05, 0.9, 0.95). None = 자르지 않음. 카메라 거치대를 고정한 뒤 captures/last.jpg를 보고 정한다
+OCR_CROP = None
+# 이진화 방식: "adaptive" = 주변 밝기 기준(조명이 고르지 않을 때 유리), "otsu" = 사진 전체에 임계값 하나
+OCR_THRESHOLD_METHOD = "adaptive"
+OCR_ADAPTIVE_RADIUS = 15       # 주변 밝기를 볼 범위(픽셀). 글자 획보다 충분히 커야 한다
+OCR_ADAPTIVE_OFFSET = 10       # 주변보다 이만큼 더 어두워야 글자로 본다. 얼룩이 글자로 잡히면 키운다
+OCR_BINARIZE_THRESHOLD = None  # 숫자(0~255)를 넣으면 위 방식 대신 고정 임계값 사용
+PROCESSED_PATH = "captures/last_processed.png"  # OCR에 실제로 들어간 이미지 (문제 확인용)
