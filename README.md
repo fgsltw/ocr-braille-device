@@ -74,7 +74,8 @@ braille_reader/
   controls.py    버튼·엔코더 / 키보드 → 이벤트
   app.py         메인 루프
   servo_test.py  서보 점검·보정 도구
-tests/           점자 변환·탐색 테스트
+tests/           점자 변환·탐색·OCR 전처리 테스트
+hardware/        3D 프린트 모델(.scad)과 출력용 STL — 점자 셀, 카메라 스탠드
 ```
 
 ## MVP에서 지원하지 않는 것

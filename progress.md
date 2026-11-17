@@ -14,7 +14,7 @@ README의 "단계별 점검" 표 순서대로 한 부품씩 연결하며 진행�
 | 2 | PCA9685 연결 확인 | `i2cdetect -y 1`에 `40` | 서보모터 제어 |
 | 3 | 서보 6개 동작 확인 | `python -m braille_reader.servo_test` | 서보모터 제어 |
 | 4 | 서보 각도 보정 → `config.py`의 `SERVO_UP_ANGLE` / `SERVO_DOWN_ANGLE` 갱신 (지금은 임시값 60/90도) | `servo_test --angle <점> <각도>` | 서보모터 제어 |
-| 5 | 돌기 높이·간격을 손끝으로 구분할 수 있는지 확인, 필요하면 기구물 수정 | `servo_test --text 가나다` | 촉각 출력 |
+| 5 | 3D 프린트 셀 출력·조립 (`docs/기구.md` 0장: fit_test → SG90 치수 확인 → 조립), 돌기를 손끝으로 구분할 수 있는지 확인 | `servo_test --text 가나다` | 촉각 출력 |
 | 6 | 버튼 모듈 배선 확인 (눌렀을 때 GND 연결되는지, 풀업 내장 여부) | `python -m braille_reader --text 가나다` | 사용자 조작 |
 | 7 | 카메라 연결 확인 | `rpicam-hello -t 2000` | OCR |
 | 8 | 카메라 높이·`OCR_CROP` 정하고 OCR 인식률 확인. 적응형/Otsu 이진화 비교, 필요하면 `OCR_ADAPTIVE_*`·`OCR_PSM` 조정 | `captures/last.jpg`, `last_processed.png`, 터미널 `[OCR] 원문` | OCR |
@@ -43,6 +43,13 @@ README의 "단계별 점검" 표 순서대로 한 부품씩 연결하며 진행�
 ---
 
 ## 작업 기록
+
+### 2026-11-17 — 3D 프린트 기구 모델
+- `hardware/braille_cell.scad`: 확대 셀(점 간격 6mm, 핀 3mm, 돌기 1mm). 서보 6개를 원형 배치, 레버가 핀 플랜지를 직접 밀어 올림, 플랜지가 뚜껑 돌기부에 닿아 높이 고정, 얇은 레버 끝이 휘어 과회전 흡수
+- `hardware/camera_stand.scad`: 받침(기둥 뒤) + 기둥 3토막 + 팔(라즈베리파이·카메라 핀 고정, 기본 카메라 케이블로 연결), 렌즈 높이 약 30cm
+- 출력용 STL 10종(`hardware/stl/`), 서포트 없이 출력되는 방향. 나사는 SG90 동봉품만 사용
+- OpenSCAD CGAL로 모든 부품 쌍의 교차를 계산해 충돌 없음 확인 (레버를 10° 내린 상태 포함). 이때 맞은편 레버 끝이 셀 가운데서 부딪히는 문제를 찾아 고침
+- 확인 안 된 것: 실제 출력·조립. SG90 치수(특히 `horn_face`, `tab_top`, 혼 크기)는 제조사마다 달라 재서 맞춰야 함
 
 ### 2026-11-17 — Cornell 프로젝트에서 가져온 것
 참고: Cornell ECE5725 (2019 Fall) "Braille Translator" (SG90 6개 + Pi Camera + Tesseract, 영어)

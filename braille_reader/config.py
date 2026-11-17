@@ -15,6 +15,7 @@ SERVO_MAX_PULSE_US = 2400
 # 점 1~6 각각의 "돌기 올림 / 내림" 각도.
 # 서보를 거꾸로 달았다면 해당 점의 두 값을 서로 바꾸면 된다.
 # 실제 값은 `python -m braille_reader.servo_test` 로 맞춘다.
+# 3D 프린트 셀(hardware/)은 혼을 90°에서 수평으로 끼우므로 올림 ≈ 90 ± 3~5, 내림 ≈ 올림에서 8~10° 반대쪽.
 SERVO_UP_ANGLE = [60, 60, 60, 60, 60, 60]
 SERVO_DOWN_ANGLE = [90, 90, 90, 90, 90, 90]
 
