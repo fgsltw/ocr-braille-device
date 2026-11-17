@@ -94,8 +94,16 @@ def main() -> None:
 
 ## B 묶음 — 서보 도착 후 치수 확인하고 주문 (견적은 지금 받아도 됨)
 
-SG90은 제조사마다 치수가 조금씩 다르다. 서보가 오면 `hardware/braille_cell.scad`의 `[SG90 치수]` 값을 재서 고치고,
+SG90은 제조사마다 치수가 조금씩 다르다. 몸체 크기(22.2 × 11.8mm, 전체 높이 31mm)는 구매처 표기로 반영했다.
+서보가 오면 표기에 없는 아래 값을 자로 재서 `hardware/braille_cell.scad`의 `[SG90 치수]`를 고치고,
 `bash hardware/export_stl.sh` → `python hardware/make_order.py`로 파일을 다시 만든 뒤 주문한다.
+
+| 잴 값 | 변수 | 지금 값 | 재는 법 |
+|---|---|---:|---|
+| 탭 높이 | `tab_top` | 15.9 | 몸체 바닥 ~ 날개(탭) 윗면 |
+| 나사 구멍 간격 | `hole_spacing` | 27.8 | 양쪽 날개 구멍 중심 사이 |
+| 혼 높이 | `horn_face` | 5.5 | 외팔 혼을 끼운 상태로, 몸체 윗면 ~ 혼 팔 윗면 |
+| 외팔 혼 | `horn_len`, `horn_w_hub`, `horn_w_tip`, `horn_t` | 15 / 6 / 4 / 1.6 | 축 중심 ~ 팔 끝 둥근 곳 중심, 팔 폭(허브 쪽/끝 쪽), 두께 |
 
 {head}
 {chr(10).join(rows["B"])}
