@@ -53,8 +53,12 @@ CAMERA_WARMUP_SEC = 1.5
 CAMERA_AUTOFOCUS = True        # Camera Module 3 자동 초점
 CAPTURE_PATH = "captures/last.jpg"   # 마지막 촬영 이미지 (OCR 문제 확인용)
 
-OCR_LANG = "kor"
-OCR_PSM = 6                    # 6 = 하나의 텍스트 블록으로 가정. 한 줄이면 7도 시도해 볼 것
+# OCR 엔진: "rapidocr" = PP-OCRv5 한국어 모델 (pip로 설치, 한국어 인식률이 좋다)
+#           "tesseract" = Tesseract kor (apt로 설치)
+OCR_ENGINE = "rapidocr"
+OCR_LOW_CONFIDENCE = 0.8       # 이보다 낮은 줄은 "신뢰도 낮음"으로 표시 (rapidocr만)
+OCR_LANG = "kor"               # Tesseract 언어
+OCR_PSM = 6                    # Tesseract: 6 = 하나의 텍스트 블록으로 가정. 한 줄이면 7도 시도해 볼 것
 # 촬영 사진에서 문서 부분만 잘라 OCR한다. (왼쪽, 위, 오른쪽, 아래)를 0~1 비율로.
 # 예: (0.1, 0.05, 0.9, 0.95). None = 자르지 않음. 카메라 거치대를 고정한 뒤 captures/last.jpg를 보고 정한다
 OCR_CROP = None

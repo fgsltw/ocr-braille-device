@@ -20,6 +20,16 @@ python -m braille_reader --mock --text "3시에 만나요!"  # 숫자 + 문장�
 python -m braille_reader --mock --no-abbrev   # 약자·약어 없이 풀어 쓰기
 ```
 
+### 사진으로 해보기 (카메라 대신 휴대폰 사진)
+
+```bash
+pip install rapidocr onnxruntime        # OCR 엔진 (PP-OCRv5 한국어 모델은 처음 실행 때 자동으로 내려받음, 약 13MB)
+python -m braille_reader --mock --image samples/sample_shadow.jpg
+python -m braille_reader --mock --image doc.jpg      # 휴대폰으로 찍은 문서
+```
+
+`c`(촬영)를 누르면 인식한 줄마다 신뢰도와 걸린 시간, 변환된 점자가 나온다. Windows에서 설치 중 "파일 이름이 너무 깁니다" 오류가 나면 저장소를 `C:raille`처럼 짧은 경로에 두고 다시 설치한다.
+
 `--mock`에서는 키보드로 조작한다: `c`=촬영, `n`=다음, `p`=이전, `r`=처음부터, `s`=다시 출력, `a`=자동 읽기 켜기/끄기, `q`=종료 (입력 후 Enter).
 
 **자동 읽기**: 버튼 2를 1초 이상 누르면(키보드 `a`) 셀이 일정 간격으로 넘어간다. 자동 읽기 중에는 버튼 2/3(`n`/`p`)이 빠르게/느리게(셀당 3.0~0.7초, 5단계)로 바뀌고, 마지막 셀에서 멈춘다. 간격은 `config.py`의 `AUTO_READ_INTERVALS_SEC`에서 바꾼다.
@@ -58,7 +68,7 @@ bash scripts/install_pi.sh
 - 버튼 없이: `--keyboard`
 - 카메라 없이: `--text "문장"` 또는 `--image 사진.jpg`
 
-OCR 결과가 이상하면 마지막 촬영 사진 `captures/last.jpg`와 OCR에 실제로 들어간 흑백 이미지 `captures/last_processed.png`를 확인한다. 문서 바깥이 많이 찍히면 `OCR_CROP`, 글자가 끊기거나 얼룩이 글자로 잡히면 `OCR_ADAPTIVE_RADIUS`·`OCR_ADAPTIVE_OFFSET`(또는 `OCR_THRESHOLD_METHOD = "otsu"`), 그 밖에 `OCR_PSM`(6 또는 7)·`CAMERA_RESOLUTION`을 조정한다.
+OCR 엔진은 `config.py`의 `OCR_ENGINE`(기본 `"rapidocr"`) 또는 `--ocr tesseract`로 바꾼다. OCR 결과가 이상하면 마지막 촬영 사진 `captures/last.jpg`와 OCR에 실제로 들어간 흑백 이미지 `captures/last_processed.png`를 확인한다. 문서 바깥이 많이 찍히면 `OCR_CROP`, 글자가 끊기거나 얼룩이 글자로 잡히면 `OCR_ADAPTIVE_RADIUS`·`OCR_ADAPTIVE_OFFSET`(또는 `OCR_THRESHOLD_METHOD = "otsu"`), 그 밖에 `OCR_PSM`(6 또는 7)·`CAMERA_RESOLUTION`을 조정한다.
 
 ### 3. 전원 켜면 자동 실행 (선택)
 
@@ -72,13 +82,14 @@ braille_reader/
   hangul.py      음절 → 초성·중성·종성
   braille.py     한글 → 6점 셀 배열 (기본 규칙, 약자·약어, 모음 연쇄 구분표, 숫자, 문장부호)
   navigator.py   셀 앞뒤 이동
-  ocr.py         이미지 전처리(영역 자르기, 적응형 이진화) + Tesseract
+  ocr.py         이미지 전처리(영역 자르기, 적응형 이진화) + RapidOCR(PP-OCRv5 한국어) / Tesseract
   sources.py     카메라+OCR / 이미지 파일 / 고정 문장
   display.py     PCA9685 서보 출력 / 터미널 모의 출력
   controls.py    버튼·엔코더 / 키보드 → 이벤트
   app.py         메인 루프
   servo_test.py  서보 점검·보정 도구
-tests/           점자 변환·탐색·OCR 전처리 테스트
+tests/           점자 변환·탐색·OCR 테스트 (실제 OCR 모델 테스트는 rapidocr가 있을 때만)
+samples/         OCR 시험용 한국어 이미지 (깨끗한 것, 한쪽이 그늘진 것)
 hardware/        3D 프린트 모델(.scad)과 출력용 STL — 점자 셀, 카메라 스탠드
 ```
 

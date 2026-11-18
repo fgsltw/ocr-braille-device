@@ -1,8 +1,9 @@
-"""이미지 → 한글 문자열 (Tesseract, 오프라인)."""
+"""이미지 → 한글 문자열 (RapidOCR PP-OCRv5 한국어 또는 Tesseract, 모두 오프라인)."""
 from __future__ import annotations
 
 import os
 import re
+import time
 
 from PIL import Image, ImageChops, ImageFilter, ImageOps
 
@@ -80,17 +81,63 @@ def clean_text(raw: str) -> str:
     return _SPACES.sub(" ", text).strip()
 
 
-def image_to_text(img: Image.Image) -> str:
-    import pytesseract  # 실제 OCR을 쓸 때만 필요
-
+def image_to_text(img: Image.Image, engine: str | None = None) -> str:
+    """전처리한 이미지를 OCR 엔진에 넣고, 점자로 바꿀 수 있는 문자만 남긴 문자열을 돌려준다."""
+    engine = engine or config.OCR_ENGINE
     processed = preprocess(img)
     if config.PROCESSED_PATH:
         os.makedirs(os.path.dirname(config.PROCESSED_PATH) or ".", exist_ok=True)
         processed.save(config.PROCESSED_PATH)
-    raw = pytesseract.image_to_string(
-        processed,
-        lang=config.OCR_LANG,
-        config=f"--psm {config.OCR_PSM}",
-    )
-    print(f"[OCR] 원문: {raw.strip()!r}")
-    return clean_text(raw)
+
+    if engine == "rapidocr":
+        _load_rapidocr()
+    start = time.perf_counter()
+    if engine == "rapidocr":
+        lines = _rapidocr_lines(processed)
+    elif engine == "tesseract":
+        lines = _tesseract_lines(processed)
+    else:
+        raise ValueError(f"알 수 없는 OCR 엔진: {engine!r} (rapidocr 또는 tesseract)")
+    elapsed = time.perf_counter() - start
+
+    print(f"[OCR] {engine}, {len(lines)}줄, {elapsed:.2f}초")
+    for text, score in lines:
+        mark = "  ← 신뢰도 낮음" if score is not None and score < config.OCR_LOW_CONFIDENCE else ""
+        conf = f"({score:.2f}) " if score is not None else ""
+        print(f"  {conf}{text}{mark}")
+    return clean_text("\n".join(text for text, _ in lines))
+
+
+_rapid_engine = None
+
+
+def _load_rapidocr() -> None:
+    """RapidOCR + PP-OCRv5 한국어 모델 준비. 처음 한 번만 모델을 내려받는다 (약 13MB)."""
+    global _rapid_engine
+    from rapidocr import LangRec, ModelType, OCRVersion, RapidOCR  # RapidOCR를 쓸 때만 필요
+
+    if _rapid_engine is None:
+        t0 = time.perf_counter()
+        _rapid_engine = RapidOCR(params={
+            "Rec.lang_type": LangRec.KOREAN,
+            "Rec.ocr_version": OCRVersion.PPOCRV5,
+            "Rec.model_type": ModelType.MOBILE,   # 한국어 모델은 mobile만 있다
+            "Global.log_level": "warning",
+        })
+        print(f"[OCR] 모델 준비 {time.perf_counter() - t0:.2f}초 (처음 한 번만)")
+
+
+def _rapidocr_lines(processed: Image.Image) -> list[tuple[str, float | None]]:
+    import numpy as np  # RapidOCR를 쓸 때만 필요
+
+    _load_rapidocr()
+    result = _rapid_engine(np.array(processed.convert("RGB")))
+    return [(t, float(s)) for t, s in zip(result.txts or (), result.scores or ())]
+
+
+def _tesseract_lines(processed: Image.Image) -> list[tuple[str, float | None]]:
+    import pytesseract  # Tesseract를 쓸 때만 필요
+
+    raw = pytesseract.image_to_string(processed, lang=config.OCR_LANG,
+                                      config=f"--psm {config.OCR_PSM}")
+    return [(line, None) for line in raw.splitlines() if line.strip()]

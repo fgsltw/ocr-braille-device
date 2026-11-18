@@ -62,3 +62,32 @@ def test_crop_uses_ratios():
     assert crop(img, (0.1, 0.2, 0.5, 1.0)).size == (40, 40)
     with pytest.raises(ValueError):
         crop(img, (0.5, 0, 0.4, 1))
+
+
+# ── OCR 엔진 연결 ──────────────────────────────────────
+from braille_reader import ocr  # noqa: E402
+
+
+def test_image_to_text_uses_selected_engine(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(config, "PROCESSED_PATH", str(tmp_path / "p.png"))
+    monkeypatch.setattr(ocr, "_load_rapidocr", lambda: None)
+    monkeypatch.setattr(ocr, "_rapidocr_lines", lambda img: [("가나다!", 0.95), ("abc 라", 0.5)])
+    text = ocr.image_to_text(Image.new("RGB", (300, 100), "white"), engine="rapidocr")
+    assert text == "가나다! 라"                     # 영어는 버리고 줄은 공백으로 합침
+    out = capsys.readouterr().out
+    assert "2줄" in out and "신뢰도 낮음" in out     # 0.5 < OCR_LOW_CONFIDENCE
+    assert (tmp_path / "p.png").exists()            # 전처리 이미지 저장
+
+
+def test_unknown_engine():
+    with pytest.raises(ValueError):
+        ocr.image_to_text(Image.new("RGB", (300, 100), "white"), engine="nope")
+
+
+@pytest.mark.slow
+def test_rapidocr_reads_sample_with_shadow():
+    """실제 PP-OCRv5 한국어 모델로 그늘진 샘플 사진을 읽는다 (rapidocr 설치 시에만, 처음엔 모델 다운로드)."""
+    pytest.importorskip("rapidocr")
+    from pathlib import Path
+    img = Image.open(Path(__file__).parent.parent / "samples" / "sample_shadow.jpg")
+    assert ocr.image_to_text(img, engine="rapidocr") == "점자는 손으로 읽는 글자입니다. 2026년 11월 19일 가나다"

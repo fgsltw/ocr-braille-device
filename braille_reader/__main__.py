@@ -7,6 +7,7 @@
   --text "문장"        카메라·OCR 대신 이 문장 사용
   --image 파일.jpg     카메라 대신 이 이미지로 OCR
   --no-abbrev          점자 약자·약어를 쓰지 않음 (가 → ⠈⠣)
+  --ocr rapidocr|tesseract   OCR 엔진 (기본: config.OCR_ENGINE)
 """
 from __future__ import annotations
 
@@ -21,6 +22,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--mock-display", action="store_true", help="서보 대신 터미널에 셀 출력")
     p.add_argument("--keyboard", action="store_true", help="버튼 대신 키보드로 조작")
     p.add_argument("--no-abbrev", action="store_true", help="점자 약자·약어를 쓰지 않음")
+    p.add_argument("--ocr", choices=["rapidocr", "tesseract"], help="OCR 엔진 (기본: config.py)")
     src = p.add_mutually_exclusive_group()
     src.add_argument("--text", help="카메라·OCR 대신 사용할 문장")
     src.add_argument("--image", help="카메라 대신 OCR할 이미지 파일")
@@ -35,6 +37,8 @@ def main(argv: list[str] | None = None) -> int:
             args.text = "가나다"
 
     from . import config
+    if args.ocr:
+        config.OCR_ENGINE = args.ocr
     from .app import App
     from .controls import GpioControls, KeyboardControls
     from .display import MockDisplay, ServoDisplay
