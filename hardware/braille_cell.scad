@@ -240,3 +240,6 @@ else if (part == "cutaway") difference() { assembly(); translate([-100, -200, -1
 
 echo(str("핀 길이(플랜지 위)=", pin_len, "  레버 L_a=", L_a, "  L_b=", L_b,
          "  뚜껑 윗면 높이=", lid_top, "  상자 바깥 크기=", 2*outer));
+
+// 다른 파일에서 use <...>로 부를 때 쓰는 이름
+module cell_assembly() assembly();

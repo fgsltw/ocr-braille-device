@@ -108,3 +108,6 @@ else if (part == "column") column();
 else if (part == "arm") arm();
 
 echo(str("렌즈 높이(바닥 기준) 약 ", base_t + 2 + seg_count * seg_len, "mm, 카메라 중심은 기둥에서 ", arm_len, "mm 앞"));
+
+// 다른 파일에서 use <...>로 부를 때 쓰는 이름
+module stand_assembly() assembly();
