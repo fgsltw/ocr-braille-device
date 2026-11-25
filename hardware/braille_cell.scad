@@ -185,7 +185,7 @@ module pin_set() {
     for (r = [0:len(pin_set_d) - 1]) translate([0, r * 12, 0]) {
         for (k = [0:pin_set_count - 1]) translate([k * pin_set_pitch, 0, 0]) pin(pin_set_d[r]);
         // 런너: 플랜지 옆면을 잇는 가는 막대 (출력판 위)
-        translate([-10, -0.5, 0]) cube([10 + (pin_set_count - 1) * pin_set_pitch, 1, 0.8]);
+        translate([-10, -0.6, 0]) cube([10 + (pin_set_count - 1) * pin_set_pitch, 1.2, 1.0]);  // 업체 최소 두께 1mm
         // 표시판
         difference() {
             translate([-18, -4, 0]) cube([8, 8, 1.6]);
@@ -193,7 +193,7 @@ module pin_set() {
         }
     }
     // 세 줄을 잇는 세로 런너 → 업체가 부품 1개로 계산하도록 한 덩어리로
-    translate([-10.5, 0, 0]) cube([1, (len(pin_set_d) - 1) * 12, 0.8]);
+    translate([-10.6, 0, 0]) cube([1.2, (len(pin_set_d) - 1) * 12, 1.0]);
 }
 
 // ── 상자 (바닥 + 벽 + 받침판 홈) ────────────────────────
