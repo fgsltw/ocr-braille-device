@@ -229,6 +229,24 @@ module lid() {
     }
 }
 
+// ── 업체 주문용 묶음: 레버 8개(a 5 + b 3), 받침판 7개를 각각 한 부품으로 ──────
+// 업체가 부품마다 기본요금을 받아서, 런너로 이어 한 덩어리로 주문한다. 니퍼로 잘라 쓴다.
+// 레버 b는 a보다 약 4mm 길어 길이로 구분한다.
+lever_set_pitch = 2 * 3.5 + 10;   // 레버 두꺼운 부분 폭(7) + 간격
+module lever_set() {
+    Ls = concat([for (k = [0:4]) L_a], [for (k = [0:2]) L_b]);
+    for (k = [0:len(Ls) - 1]) translate([0, k * lever_set_pitch, lever_t/2]) rotate([180, 0, 0]) lever(Ls[k]);
+    // 허브 바깥쪽(-x)을 잇는 런너 (폭 1.2, 높이 1.0 — 업체 최소 두께 1mm)
+    translate([-lever_hub_r - 0.6, -0.6, 0]) cube([1.2, (len(Ls) - 1) * lever_set_pitch + 1.2, 1.0]);
+}
+
+mount_set_pitch = 20 + 4;   // 받침판 폭(20) + 간격
+module mount_set(n = 7) {
+    for (k = [0:n - 1]) translate([0, k * mount_set_pitch, -mount_z0]) servo_mount();
+    // 받침판 바닥쪽 끝(x_floor)을 잇는 런너
+    translate([x_floor - 0.6, -10, 0]) cube([1.2, (n - 1) * mount_set_pitch + 20, 1.0]);
+}
+
 // ── 공차 시험판 ───────────────────────────────────────
 module fit_test() {
     clears = [0.2, 0.3, 0.4, 0.5];
@@ -260,6 +278,8 @@ else if (part == "base") base();
 else if (part == "lid") translate([0, 0, lid_top]) rotate([180, 0, 0]) lid();
 else if (part == "pin") pin();
 else if (part == "pin_set") pin_set();
+else if (part == "lever_set") lever_set();
+else if (part == "mount_set") mount_set();
 else if (part == "lever_a") translate([0, 0, lever_t/2]) rotate([180, 0, 0]) lever(L_a);
 else if (part == "lever_b") translate([0, 0, lever_t/2]) rotate([180, 0, 0]) lever(L_b);
 else if (part == "servo_mount") translate([0, 0, -mount_z0]) servo_mount();
