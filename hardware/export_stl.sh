@@ -11,7 +11,7 @@ if ! command -v "$OPENSCAD" >/dev/null 2>&1; then
 fi
 
 mkdir -p stl
-for part in base lid pin lever_a lever_b servo_mount fit_test; do
+for part in base lid pin pin_set lever_a lever_b servo_mount fit_test; do
   echo "braille_cell: $part"
   "$OPENSCAD" -o "stl/cell_${part}.stl" -D "part=\"$part\"" braille_cell.scad
 done

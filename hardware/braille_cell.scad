@@ -168,11 +168,32 @@ L_a = R - dist(0);   // 점 1·3·4·6
 L_b = R - dist(1);   // 점 2·5
 
 // ── 핀 ────────────────────────────────────────────────
-module pin() {
+module pin(d = pin_d) {
     cylinder(d = flange_d, h = flange_h);
-    translate([0, 0, flange_h]) cylinder(d = pin_d, h = pin_len - dome_h);
+    translate([0, 0, flange_h]) cylinder(d = d, h = pin_len - dome_h);
     translate([0, 0, flange_h + pin_len - dome_h])
-        scale([1, 1, dome_h / (pin_d/2)]) sphere(d = pin_d);
+        scale([1, 1, dome_h / (d/2)]) sphere(d = d);
+}
+
+// ── 업체 주문용 핀 묶음: 3가지 굵기 × 8개를 한 부품으로 ─────────
+// 줄마다 바닥 런너(연결대)로 잇고, 줄 끝 표시판의 구멍 개수로 굵기를 구분한다
+// (구멍 1개 = 3.0mm, 2개 = 2.9mm, 3개 = 2.8mm). 니퍼로 런너를 잘라 쓴다.
+pin_set_d     = [3.0, 2.9, 2.8];
+pin_set_count = 8;
+pin_set_pitch = flange_d + 3;
+module pin_set() {
+    for (r = [0:len(pin_set_d) - 1]) translate([0, r * 12, 0]) {
+        for (k = [0:pin_set_count - 1]) translate([k * pin_set_pitch, 0, 0]) pin(pin_set_d[r]);
+        // 런너: 플랜지 옆면을 잇는 가는 막대 (출력판 위)
+        translate([-10, -0.5, 0]) cube([10 + (pin_set_count - 1) * pin_set_pitch, 1, 0.8]);
+        // 표시판
+        difference() {
+            translate([-18, -4, 0]) cube([8, 8, 1.6]);
+            for (h = [0:r]) translate([-16 + h * 2.2, 0, -1]) cylinder(d = 1.4, h = 4, $fn = 16);
+        }
+    }
+    // 세 줄을 잇는 세로 런너 → 업체가 부품 1개로 계산하도록 한 덩어리로
+    translate([-10.5, 0, 0]) cube([1, (len(pin_set_d) - 1) * 12, 0.8]);
 }
 
 // ── 상자 (바닥 + 벽 + 받침판 홈) ────────────────────────
@@ -238,6 +259,7 @@ if (part == "assembly") assembly();
 else if (part == "base") base();
 else if (part == "lid") translate([0, 0, lid_top]) rotate([180, 0, 0]) lid();
 else if (part == "pin") pin();
+else if (part == "pin_set") pin_set();
 else if (part == "lever_a") translate([0, 0, lever_t/2]) rotate([180, 0, 0]) lever(L_a);
 else if (part == "lever_b") translate([0, 0, lever_t/2]) rotate([180, 0, 0]) lever(L_b);
 else if (part == "servo_mount") translate([0, 0, -mount_z0]) servo_mount();
