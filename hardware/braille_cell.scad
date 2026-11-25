@@ -29,27 +29,30 @@ servo_L    = 22.2;  // 몸체 길이 (탭 방향) — 구매처 표기 31×22.2�
 servo_W    = 11.8;  // 몸체 폭 — 구매처 표기
 servo_H    = 22.5;  // 몸체 높이 (축 방향, 기어 돌출부 제외)
 shaft_from_end = 5.9;   // 축 중심 ~ 가까운 몸체 끝
-tab_span   = 32.2;  // 탭 포함 전체 길이
+tab_span   = 32;    // 탭 포함 전체 길이 (날개 끝~끝, 실측)
 tab_t      = 2.5;   // 탭 두께
-tab_top    = 15.9;  // 몸체 바닥 ~ 탭 윗면
-hole_spacing = 27.8;    // 탭 나사 구멍 간격
-horn_face  = 5.5;   // 몸체 윗면 ~ 혼 팔 바깥면 (혼을 끼운 상태로 잰다)
+tab_top    = 19.5;  // 몸체 바닥 ~ 탭 윗면 (실측 2026-11-25)
+// 탭 나사 구멍 간격: 이 서보는 날개 끝의 구멍이 바깥으로 트여 있어 중심 간격이 약 28mm
+// (날개 끝~끝 32mm에서 양쪽 약 2mm 안쪽). 오차를 흡수하도록 받침판 구멍을 이 범위의 긴 홈으로 만든다
+hole_spacing_min = 26.5;
+hole_spacing_max = 29.5;
+horn_face  = 9.5;   // 몸체 윗면 ~ 혼 팔 바깥면 (혼을 끼운 상태로 잰다, 실측)
 horn_hub_d = 7.0;   // 혼 허브 지름
-horn_len   = 15;    // 축 중심 ~ 혼 팔 끝 둥근 부분 중심 (외팔 혼)
-horn_w_hub = 6;     // 혼 팔 폭 (허브 쪽)
-horn_w_tip = 4;     // 혼 팔 폭 (끝 쪽)
+horn_len   = 20;    // 축 중심 ~ 혼 팔 끝 둥근 부분 중심 (외팔 혼, 실측)
+horn_w_hub = 5;     // 혼 팔 폭 (허브 쪽, 실측)
+horn_w_tip = 4;     // 혼 팔 폭 (끝 쪽, 실측)
 horn_t     = 1.6;   // 혼 팔 두께
 bump_h     = 4.0;   // 몸체 윗면 ~ 기어 돌출부 꼭대기
 
 /* [기구] */
-R          = 40;    // 셀 중심 ~ 서보 축 거리
+R          = 48;    // 셀 중심 ~ 서보 축 거리 (혼이 길수록 레버 휘는 구간이 짧아지므로 키운다)
 z_shaft    = 26;    // 바닥 ~ 서보 축 높이
 floor_t    = 3;
 wall_t     = 3;
 lid_t      = 3;
-inner      = 56;    // 상자 안쪽 반폭
+inner      = 66;    // 상자 안쪽 반폭
 lever_t    = 4;     // 레버 두께 (축 방향)
-lever_tip_h = 2;    // 레버 휘는 부분 높이 — 작을수록 부드럽게 휜다
+lever_tip_h = 1.4;  // 레버 휘는 부분 높이 — 작을수록 부드럽게 휜다
 lever_hub_r = 7;
 clr        = 0.3;   // 일반 끼움 여유
 mount_t    = 3;     // 서보 받침판 두께
@@ -62,7 +65,7 @@ t_body_top = -lever_t/2 - (horn_face - pocket_d);  // 레버 중심면 기준 �
 bump_relief = max(0, bump_h + 0.5 - (horn_face - pocket_d));  // 레버 뒷면 파낼 깊이
 z_rest     = z_shaft + lever_tip_h/2;   // 레버가 수평일 때 레버 윗면 = 플랜지 바닥
 z_stop     = z_rest + flange_h;         // 돌기부 아랫면 (플랜지가 닿는 곳)
-lid_top    = z_shaft + 15;
+lid_top    = z_shaft + 17;   // 받침판 위쪽 나사 홈이 들어갈 높이 확보
 lid_under  = lid_top - lid_t;
 boss_h     = lid_top - z_stop;
 pin_len    = boss_h + lift;             // 플랜지 위 핀 길이
@@ -113,8 +116,8 @@ module servo_mount() {
         translate([x_floor, -10, mount_z0]) cube([mount_x1 - x_floor, 20, mount_t]);
         translate([body_x0 - clr, -servo_W/2 - clr, mount_z0 - 1])
             cube([servo_L + 2*clr, servo_W + 2*clr, mount_t + 2]);
-        for (dx = [-hole_spacing/2, hole_spacing/2])
-            translate([body_cx + dx, 0, mount_z0 - 1]) cylinder(d = 1.8, h = mount_t + 2);
+        for (sgn = [-1, 1]) hull() for (sp = [hole_spacing_min, hole_spacing_max])
+            translate([body_cx + sgn * sp/2, 0, mount_z0 - 1]) cylinder(d = 1.8, h = mount_t + 2);
     }
 }
 
@@ -129,13 +132,16 @@ module mount_socket() {
 }
 
 // ── 레버 (2D 옆모습) ───────────────────────────────────
+// 혼 팔을 감싸는 두꺼운 부분이 끝나는 곳. 그 뒤부터 핀까지가 휘는 구간이다
+lever_rigid = horn_len + horn_w_tip/2 + 2;
+
 module lever_2d(L) {
     hull() {
         circle(r = lever_hub_r);
-        translate([12, -3]) square([0.1, 6]);
+        translate([lever_rigid, -3.5]) square([0.1, 7]);
     }
     // 끝은 핀 중심을 0.5mm만 지나게 (더 길면 맞은편 레버와 가운데서 부딪힌다)
-    translate([11, -lever_tip_h/2]) square([L + 0.5 - 11, lever_tip_h]);
+    translate([lever_rigid - 1, -lever_tip_h/2]) square([L + 0.5 - lever_rigid + 1, lever_tip_h]);
     translate([L + 0.5, 0]) circle(d = lever_tip_h);
 }
 
@@ -238,7 +244,7 @@ else if (part == "servo_mount") translate([0, 0, -mount_z0]) servo_mount();
 else if (part == "fit_test") fit_test();
 else if (part == "cutaway") difference() { assembly(); translate([-100, -200, -1]) cube([200, 200, 100]); }
 
-echo(str("핀 길이(플랜지 위)=", pin_len, "  레버 L_a=", L_a, "  L_b=", L_b,
+echo(str("핀 길이(플랜지 위)=", pin_len, "  레버 L_a=", L_a, "  L_b=", L_b, "  휘는 구간 a=", L_a - lever_rigid, " b=", L_b - lever_rigid,
          "  뚜껑 윗면 높이=", lid_top, "  상자 바깥 크기=", 2*outer));
 
 // 다른 파일에서 use <...>로 부를 때 쓰는 이름
